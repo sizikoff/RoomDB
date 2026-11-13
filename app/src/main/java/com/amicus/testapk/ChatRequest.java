@@ -23,21 +23,61 @@ curl https://api.deepseek.com/chat/completions \
       }'
 
  */
-public class ChatRequest {
-    String model;
-    String reasoning_effort;
-    List<Message>messages;
 
-    public ChatRequest(String systemPrompt,String userMessage,String model) {
-        this.model = model;
-        reasoning_effort = "none";
+// Класс описывает JSON-запрос к DeepSeek
+public class ChatRequest {
+
+    // Название используемой модели
+    String model;
+
+    // Максимальное количество генерируемых токенов
+    int max_tokens;
+
+    // Настройки режима рассуждений
+    Thinking thinking;
+
+    // Список сообщений для нейросети
+    List<Message> messages;
+
+    // Конструктор принимает системную инструкцию и вопрос пользователя
+    public ChatRequest(String systemPrompt, String userMessage) {
+
+        // Выбираем модель
+        model = "deepseek-flash";
+
+        // Ограничиваем длину ответа
+        max_tokens = 300;
+
+        // Отключаем режим Thinking
+        thinking = new Thinking("disabled");
+
+        // Создаем список сообщений
         messages = new ArrayList<>();
-        messages.add(new Message("system",systemPrompt));
-        messages.add(new Message("user",userMessage));
+
+        // Добавляем системную инструкцию
+        messages.add(new Message("system", systemPrompt));
+
+        // Добавляем сообщение пользователя
+        messages.add(new Message("user", userMessage));
     }
 
-    public static class Message{
+    // Класс для настроек режима Thinking
+    public static class Thinking {
+
+        String type;
+
+        public Thinking(String type) {
+            this.type = type;
+        }
+    }
+
+    // Класс описывает одно сообщение
+    public static class Message {
+
+        // Роль отправителя
         String role;
+
+        // Текст сообщения
         String content;
 
         public Message(String role, String content) {

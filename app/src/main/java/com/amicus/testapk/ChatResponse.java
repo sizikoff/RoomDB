@@ -35,16 +35,27 @@ import java.util.List;
   "system_fingerprint": "e72d3c7f663d3e1383b00b3884cb4501"
 }
  */
+
+// Класс описывает ответ от DeepSeek
 public class ChatResponse {
+
+    // Список вариантов ответа
     List<Choice> choices;
 
-    public static class Choice{
+    // Один вариант ответа
+    public static class Choice {
+
+        // Сообщение нейросети
         Message message;
     }
 
-    public static class Message{
+    // Данные сообщения
+    public static class Message {
+
+        // Роль отправителя
         String role;
+
+        // Текст ответа
         String content;
     }
-
 }

@@ -9,8 +9,19 @@ import retrofit2.http.POST;
 /**
  * Created by sizik on 13.11.2026.
  */
+
+// Интерфейс для взаимодействия с DeepSeek API
 public interface DeepSeekApi {
+
+    // Отправляем POST-запрос на chat/completions
     @Headers("Content-Type: application/json")
     @POST("chat/completions")
-    Call<ChatResponse> sendMessage(@Header("Authorization")String apiKey, @Body ChatRequest request);
+    Call<ChatResponse> sendMessage(
+
+            // Передаем ключ API в HTTP-заголовке
+            @Header("Authorization") String apiKey,
+
+            // Передаем тело запроса
+            @Body ChatRequest request
+    );
 }
