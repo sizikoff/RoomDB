@@ -13,9 +13,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TestApk">
 
-        <service android:name=".MediaService"
-            android:exported="false"/>
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -26,10 +23,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".MainActivity2"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>

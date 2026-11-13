@@ -1,112 +1,101 @@
 package com.amicus.testapk;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.room.Room;
 
-import java.util.List;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+//https://api.deepseek.com/chat/completions
 
 public class MainActivity extends AppCompatActivity {
 
-    Button btAdd;
-    Button btRead;
-    Button btClear;
-    Button btnDelID;
+    private final String API_KEY = "sk-bd3d6422f39e4ca5a51c309f3ec82e38";
+    private final String BASE_URL = "https://api.deepseek.com/";
+    //private final String MODEL = "deepseek-flash";
+    private final String MODEL = "deepseek-v4-pro";
+    private final String SYSTEM_PROMPT = "Ты должен отвечать в стиле Ивана Грозного.Используй характерную для эпохи лексику но сохраняй понятность и точность ответов";
 
-    EditText etName;
-    EditText etEmail;
-    EditText etPhone;
-    EditText etID;
+    EditText editText;
+    Button button;
+    TextView textView;
 
-    AppDatabase db;
-    UserDao userDao;
+    DeepSeekApi api;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        btAdd = findViewById(R.id.btnAdd);
-        btRead = findViewById(R.id.btnRead);
-        btClear = findViewById(R.id.btnClear);
-        btnDelID = findViewById(R.id.btnId);
+        editText = findViewById(R.id.editText);
+        button = findViewById(R.id.button);
+        textView = findViewById(R.id.textView);
 
-        etName = findViewById(R.id.etName);
-        etEmail = findViewById(R.id.etEmail);
-        etPhone= findViewById(R.id.etPhone);
-        etID= findViewById(R.id.etID);
+        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-        db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "myDB").addMigrations(AppDatabase.MIGRATION_1_2).allowMainThreadQueries().build();
-        userDao = db.userDao();
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(logging)
+                .build();
 
-        btAdd.setOnClickListener(new View.OnClickListener() {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        api = retrofit.create(DeepSeekApi.class);
+
+        button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String name = etName.getText().toString();
-                String email = etEmail.getText().toString();
-                String phone = etPhone.getText().toString();
-
-                User user = new User();
-                user.name = name;
-                user.email = email;
-                user.phone = phone;
-
-                long id = userDao.insert(user);
-
-                Log.d("SQL", "Add user id " + id);
-
-                etName.setText("");
-                etEmail.setText("");
-                etPhone.setText("");
-            }
-        });
-
-        btRead.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                List<User> users = userDao.getAll();
-                if (users.size() == 0) {
-                    Log.d("SQL", "Empty");
+                String user_message = editText.getText().toString().trim();
+                if (user_message.isEmpty()) {
+                    textView.setError("Введите запрос");
                     return;
                 }
-                for (User user : users) {
-                    Log.d("SQL", "ID " + user.id + ", name " + user.name + ", email " + user.email+", phone "+user.phone);
-                }
+                textView.setText("Загрузка...");
+                button.setEnabled(false);
+
+                ChatRequest request = new ChatRequest(SYSTEM_PROMPT,user_message,MODEL);
+                api.sendMessage("Bearer " + API_KEY, request)
+                        .enqueue(new Callback<ChatResponse>() {
+                            @Override
+                            public void onResponse(Call<ChatResponse> call, Response<ChatResponse> response) {
+                                button.setEnabled(true);
+                                editText.setText("");
+                                if (response.isSuccessful() && response.body() != null &&
+                                        response.body().choices != null &&
+                                        !response.body().choices.isEmpty() &&
+                                        response.body().choices.get(0).message != null) {
+                                    String answer = response.body().choices.get(0).message.content;
+                                    textView.setText(answer != null ? answer : "Пустой ответ от сервера");
+                                } else {
+                                    String error = response.errorBody() != null ? response.errorBody().toString() : "Неизвестная ошибка";
+                                    textView.setText("Ошибка API "+response.code()+"\n"+error);
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Call<ChatResponse> call, Throwable throwable) {
+                                button.setEnabled(true);
+                                    textView.setText("ошибка соединения "+throwable.getMessage());
+                            }
+                        });
             }
-        });
-
-
-        btClear.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int count =userDao.clearAll();
-                userDao.reset();
-                Log.d("SQL", "Delete rows count "+ count);
-            }
-        });
-
-        btnDelID.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String idText = etID.getText().toString();
-                if (idText.isEmpty()){
-                    Log.d("SQL","Enter id");
-                    return;
-                }
-                int id = Integer.parseInt(idText);
-                int deleteCount = userDao.deleteById(id);
-                if (deleteCount>0){
-                    Log.d("SQL","User deleted id "+id);
-                }else {
-                    Log.d("SQL","User with id "+id +" not found");
-                }
-                etID.setText("");
-            }
-
         });
     }
 }

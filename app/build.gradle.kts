@@ -35,8 +35,12 @@ android {
 }
 
 dependencies {
-    implementation ("androidx.room:room-runtime:2.6.1")
-    annotationProcessor ("androidx.room:room-compiler:2.6.1")
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    // Преобразование JSON в Java-объекты
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    // Логирование HTTP-запросов
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)
